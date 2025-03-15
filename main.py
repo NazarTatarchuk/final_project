@@ -2,38 +2,36 @@ import random
 import pygame
 from pygame import sprite, image, transform
 
-# Ініціалізація Pygame
 pygame.init()
 
-# Константи
 WIDTH, HEIGHT = 1620, 900
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-# Шляхи до зображень і звуків
 img_back = "background.png"
 img_hero = "volk.png"
-img_gryvnas = 'gryvnas.png'
-img_gryvnas_1 = '1 hryvna.png'
-img_gryvnas_10 = '10_hryvna.png'
-img_gryvnas_20 = '10_hryvna.png'
-img_gryvnas_50 = '10_hryvna.png'
-img_gryvnas_100 = '10_hryvna.png'
-img_gryvnas_200 = '10_hryvna.png'
-img_gryvnas_500 = '10_hryvna.png'
+img_gryvnas = {
+    1: '1_hryvna.png',
+    10: '10_hryvnias.jpg',
+    20: '20_hryvas.jpg',
+    50: '50_hryvnas.png',
+    100: '100_hryvnas.jpg',
+    200: '200.png',
+    500: '500_hryvnas.png'
+}
+
 music_bg = 'svetofor.ogg'
 miss_sound = 'krik-volka.ogg'
+catch_sound = 'pogodi.ogg'
 
-# Створення вікна
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Вовк ловить гривні")
 
-# Завантаження музики та звуків
 pygame.mixer.music.load(music_bg)
-pygame.mixer.music.play(-1)  # Фонова музика в циклі
+pygame.mixer.music.play(-1)
 miss_sfx = pygame.mixer.Sound(miss_sound)
+catch_sfx = pygame.mixer.Sound(catch_sound)
 
-# Базовий клас спрайтів
 class GameSprite(sprite.Sprite):
     def __init__(self, player_image, player_x, player_y, size_x, size_y, player_speed):
         super().__init__()
@@ -46,15 +44,15 @@ class GameSprite(sprite.Sprite):
     def reset(self):
         screen.blit(self.image, (self.rect.x, self.rect.y))
 
-# Клас Вовка
 class Wolf(GameSprite):
     def __init__(self):
-        super().__init__(img_hero, WIDTH // 2, HEIGHT - 180, 180, 180, 10)
+        super().__init__(img_hero, WIDTH // 2, HEIGHT - 240, 240, 240, 10)
+        self.balance = 0
 
-# Клас Гривні
 class Hryvnia(GameSprite):
     def __init__(self):
-        super().__init__(img_gryvnas, random.randint(0, WIDTH - 130), 0, 130, 130, 5)
+        self.value = random.choice(list(img_gryvnas.keys()))
+        super().__init__(img_gryvnas[self.value], random.randint(0, WIDTH - 130), 0, 130, 130, 5)
     
     def fall(self):
         self.rect.y += self.speed
@@ -62,20 +60,16 @@ class Hryvnia(GameSprite):
     def is_caught(self, wolf):
         return self.rect.colliderect(wolf.rect)
 
-# Основний ігровий цикл
 def game_loop():
     running = True
     clock = pygame.time.Clock()
     wolf = Wolf()
     hryvnias = []
-    score = 0
     missed = 0
-    max_missed = 5
+    max_missed = 20
     font = pygame.font.SysFont(None, 36)
     game_over_font = pygame.font.SysFont(None, 72)
-    
-    background = pygame.image.load(img_back)
-    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+    background = pygame.transform.scale(pygame.image.load(img_back), (WIDTH, HEIGHT))
     
     while running:
         screen.blit(background, (0, 0))
@@ -90,14 +84,14 @@ def game_loop():
         if keys[pygame.K_RIGHT] and wolf.rect.x < WIDTH - wolf.rect.width:
             wolf.rect.x += wolf.speed
         
-        if random.randint(1, 50) == 1:
+        if random.randint(1, 30) == 1:
             hryvnias.append(Hryvnia())
         
         for hryvnia in hryvnias[:]:
             hryvnia.fall()
             if hryvnia.is_caught(wolf):
                 hryvnias.remove(hryvnia)
-                score += 1
+                wolf.balance += hryvnia.value
                 catch_sfx.play()
             elif hryvnia.rect.y > HEIGHT:
                 hryvnias.remove(hryvnia)
@@ -108,7 +102,7 @@ def game_loop():
         for hryvnia in hryvnias:
             hryvnia.reset()
         
-        score_text = font.render(f"Рахунок: {score}", True, BLACK)
+        score_text = font.render(f"Баланс: {wolf.balance} грн", True, BLACK)
         missed_text = font.render(f"Пропущено: {missed}/{max_missed}", True, BLACK)
         screen.blit(score_text, (10, 10))
         screen.blit(missed_text, (10, 50))
@@ -124,7 +118,7 @@ def game_loop():
         clock.tick(30)
     
     pygame.quit()
-    print(f"Ігра закінчена! Ваш рахунок: {score}")
+    print(f"Ігра закінчена! Ваш баланс: {wolf.balance} грн")
 
 if __name__ == "__main__":
     game_loop()
