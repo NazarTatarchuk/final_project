@@ -24,6 +24,7 @@ music_bg = 'svetofor.ogg'
 miss_sound = 'krik-volka.ogg'
 catch_sound = 'pogodi.ogg'
 
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Вовк ловить гривні")
 
@@ -49,9 +50,11 @@ class Wolf(GameSprite):
         super().__init__(img_hero, WIDTH // 2, HEIGHT - 240, 240, 240, 10)
         self.balance = 0
 
+ymovirnosti = [0.3, 0.2, 0.15, 0.1, 0.1, 0.1, 0.05]
+
 class Hryvnia(GameSprite):
     def __init__(self):
-        self.value = random.choice(list(img_gryvnas.keys()))
+        self.value = random.choices(list(img_gryvnas.keys()), weights = ymovirnosti, k= 1 )[0]
         super().__init__(img_gryvnas[self.value], random.randint(0, WIDTH - 130), 0, 130, 130, 5)
     
     def fall(self):
@@ -59,6 +62,7 @@ class Hryvnia(GameSprite):
     
     def is_caught(self, wolf):
         return self.rect.colliderect(wolf.rect)
+    
 
 def game_loop():
     running = True
@@ -84,10 +88,10 @@ def game_loop():
         if keys[pygame.K_RIGHT] and wolf.rect.x < WIDTH - wolf.rect.width:
             wolf.rect.x += wolf.speed
         
-        if random.randint(1, 30) == 1:
+        if random.randint(1, 75) == 1:
             hryvnias.append(Hryvnia())
         
-        for hryvnia in hryvnias[:]:
+        for hryvnia in hryvnias:
             hryvnia.fall()
             if hryvnia.is_caught(wolf):
                 hryvnias.remove(hryvnia)
@@ -109,6 +113,12 @@ def game_loop():
         
         if missed >= max_missed:
             game_over_text = game_over_font.render("ГРА ЗАКІНЧЕНА", True, (255, 0, 0))
+            screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height() // 2))
+            pygame.display.flip()
+            pygame.time.delay(3000)
+            running = False
+        if wolf.balance >= 4000:
+            game_over_text = game_over_font.render("Ви Перемогли", True, (0, 255, 0))
             screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - game_over_text.get_height() // 2))
             pygame.display.flip()
             pygame.time.delay(3000)
